@@ -12,18 +12,45 @@ static const GPathInfo UP_PATH_INFO = {
   .points = (GPoint []) {{7, ((168 - 20) / 2) + 7}, {28, (168 - 20) / 2}, {7, ((168 - 20) / 2) - 7}}
 };
 
+static int ship_position = ((168 - 20) / 2);
+
+static PropertyAnimation *property_animation;
+
+
+static void animate_ship(void) {
+  
+  // Set start and end
+  GRect from_frame = layer_get_frame(canvas_layer);
+  GRect to_frame = GRect(0, ship_position - ((168 - 20) / 2), 140, ship_position + ((168 - 20) / 2));
+
+  // Create the animation
+  property_animation = property_animation_create_layer_frame(canvas_layer, &from_frame, &to_frame);
+
+  // Schedule to occur ASAP with default settings
+  animation_schedule((Animation*) property_animation);
+  
+}
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   text_layer_set_text(text_layer, "Select");
-  layer_mark_dirty(canvas_layer);
 }
 
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
   text_layer_set_text(text_layer, "Up");
+
+  // TODO: add bounds checking
+  ship_position -= 14;
+
+  animate_ship();
 }
 
 static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
   text_layer_set_text(text_layer, "Down");
+
+  // TODO: add bounds checking
+  ship_position += 14;
+
+  animate_ship();
 }
 
 static void click_config_provider(void *context) {

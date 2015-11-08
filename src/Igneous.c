@@ -4,10 +4,25 @@ static Window *window;
 static TextLayer *text_layer;
 
 
+static Layer *background_layer;
+
+static GPath *ceiling_path_ptr = NULL;
+static const GPathInfo CEILING_PATH_INFO = {
+  .num_points = 4,
+  .points = (GPoint []) {{0, 0}, {144, 0}, {144, 7}, {0, 7}}
+};
+
+static GPath *floor_path_ptr = NULL;
+static const GPathInfo FLOOR_PATH_INFO = {
+  .num_points = 4,
+  .points = (GPoint []) {{0, (168 - 20)}, {144, (168 - 20)}, {144, (168 - 20) - 7}, {0, (168 - 20) - 7}}
+};
+
+
 static Layer *canvas_layer;
 
 static GPath *ship_path_ptr = NULL;
-static const GPathInfo UP_PATH_INFO = {
+static const GPathInfo SHIP_PATH_INFO = {
   .num_points = 3,
   .points = (GPoint []) {{7, ((168 - 20) / 2) + 7}, {28, (168 - 20) / 2}, {7, ((168 - 20) / 2) - 7}}
 };
@@ -21,15 +36,32 @@ static void animate_ship(void) {
   
   // Set start and end
   GRect from_frame = layer_get_frame(canvas_layer);
-  GRect to_frame = GRect(0, ship_position - ((168 - 20) / 2), 140, ship_position + ((168 - 20) / 2));
+  GRect to_frame = GRect(0, ship_position - ((168 - 20) / 2), 144, ship_position + ((168 - 20) / 2));
 
   // Create the animation
   property_animation = property_animation_create_layer_frame(canvas_layer, &from_frame, &to_frame);
 
   // Schedule to occur ASAP with default settings
   animation_schedule((Animation*) property_animation);
-  
+
 }
+
+static void explode_ship(void) {
+
+  // TODO: differentiate from animate_ship()!
+
+  // Set start and end
+  GRect from_frame = layer_get_frame(canvas_layer);
+  GRect to_frame = GRect(0, ship_position - ((168 - 20) / 2), 144, ship_position + ((168 - 20) / 2));
+
+  // Create the animation
+  property_animation = property_animation_create_layer_frame(canvas_layer, &from_frame, &to_frame);
+
+  // Schedule to occur ASAP with default settings
+  animation_schedule((Animation*) property_animation);
+
+}
+
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   text_layer_set_text(text_layer, "Select");
@@ -38,19 +70,29 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
   text_layer_set_text(text_layer, "Up");
 
-  // TODO: add bounds checking
+  // bounds checking
   ship_position -= 14;
 
-  animate_ship();
+  if (ship_position < 18) {
+    ship_position = ((168 - 20) / 2);
+    explode_ship();
+  } else {
+    animate_ship();
+  }
 }
 
 static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
   text_layer_set_text(text_layer, "Down");
 
-  // TODO: add bounds checking
+  // bounds checking
   ship_position += 14;
 
-  animate_ship();
+  if (ship_position > 130) {
+    ship_position = ((168 - 20) / 2);
+    explode_ship();
+  } else {
+    animate_ship();
+  }
 }
 
 static void click_config_provider(void *context) {
@@ -72,6 +114,21 @@ static void canvas_update_proc(Layer *this_layer, GContext *ctx) {
 
 }
 
+static void background_update_proc(Layer *this_layer, GContext *ctx) {
+
+  // draw landscape
+  graphics_context_set_fill_color(ctx, GColorWindsorTan);
+  gpath_draw_filled(ctx, ceiling_path_ptr);
+  graphics_context_set_stroke_color(ctx, GColorWindsorTan);
+  gpath_draw_outline(ctx, ceiling_path_ptr);
+
+  graphics_context_set_fill_color(ctx, GColorWindsorTan);
+  gpath_draw_filled(ctx, floor_path_ptr);
+  graphics_context_set_stroke_color(ctx, GColorWindsorTan);
+  gpath_draw_outline(ctx, floor_path_ptr);
+
+}
+
 
 static void window_load(Window *window) {
 
@@ -87,6 +144,15 @@ static void window_load(Window *window) {
   layer_add_child(window_layer, text_layer_get_layer(text_layer));
 
 
+
+  // Create background canvas layer
+  background_layer = layer_create(GRect(0, 0, bounds.size.w, bounds.size.h));
+  layer_add_child(window_layer, background_layer);
+
+  // Set the update_proc
+  layer_set_update_proc(background_layer, background_update_proc);
+
+
   // Create canvas layer
   canvas_layer = layer_create(GRect(0, 0, bounds.size.w, bounds.size.h));
   layer_add_child(window_layer, canvas_layer);
@@ -94,8 +160,11 @@ static void window_load(Window *window) {
   // Set the update_proc
   layer_set_update_proc(canvas_layer, canvas_update_proc);
 
+
   // path setup(s)
-  ship_path_ptr = gpath_create(&UP_PATH_INFO);
+  ship_path_ptr = gpath_create(&SHIP_PATH_INFO);
+  ceiling_path_ptr = gpath_create(&CEILING_PATH_INFO);
+  floor_path_ptr = gpath_create(&FLOOR_PATH_INFO);
 }
 
 static void window_unload(Window *window) {

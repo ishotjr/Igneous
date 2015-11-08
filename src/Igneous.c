@@ -9,13 +9,39 @@ static Layer *background_layer;
 static GPath *ceiling_path_ptr = NULL;
 static const GPathInfo CEILING_PATH_INFO = {
   .num_points = 4,
-  .points = (GPoint []) {{0, 0}, {144, 0}, {144, 7}, {0, 7}}
+  .points = (GPoint []) {{0, 0}, {3 * 144, 0}, {3 * 144, 7}, {0, 7}}
 };
 
 static GPath *floor_path_ptr = NULL;
 static const GPathInfo FLOOR_PATH_INFO = {
   .num_points = 4,
-  .points = (GPoint []) {{0, (168 - 20)}, {144, (168 - 20)}, {144, (168 - 20) - 7}, {0, (168 - 20) - 7}}
+  .points = (GPoint []) {{0, (168 - 20)}, {3 * 144, (168 - 20)}, {3 * 144, (168 - 20) - 7}, {0, (168 - 20) - 7}}
+};
+
+static GPath *star1_path_ptr = NULL;
+static const GPathInfo STAR1_PATH_INFO = {
+  .num_points = 4,
+  .points = (GPoint []) {{144 + 7 - 2, 21}, {144 + 7, 21 - 2}, {144 + 7 + 2, 21}, {144 + 7, 21 + 2}}
+};
+static GPath *star2_path_ptr = NULL;
+static const GPathInfo STAR2_PATH_INFO = {
+  .num_points = 4,
+  .points = (GPoint []) {{144 + 42 - 2, 56}, {144 + 42, 56 - 2}, {144 + 42 + 2, 56}, {144 + 42, 56 + 2}}
+};
+static GPath *star3_path_ptr = NULL;
+static const GPathInfo STAR3_PATH_INFO = {
+  .num_points = 4,
+  .points = (GPoint []) {{144 + 70 - 2, 98}, {144 + 70, 98 - 2}, {144 + 70 + 2, 98}, {144 + 70, 98 + 2}}
+};
+static GPath *star4_path_ptr = NULL;
+static const GPathInfo STAR4_PATH_INFO = {
+  .num_points = 4,
+  .points = (GPoint []) {{144 + 105 - 2, 70}, {144 + 105, 70 - 2}, {144 + 105 + 2, 70}, {144 + 105, 70 + 2}}
+};
+static GPath *star5_path_ptr = NULL;
+static const GPathInfo STAR5_PATH_INFO = {
+  .num_points = 4,
+  .points = (GPoint []) {{144 + 119 - 2, 35}, {144 + 119, 35 - 2}, {144 + 119 + 2, 35}, {144 + 119, 35 + 2}}
 };
 
 
@@ -30,6 +56,7 @@ static const GPathInfo SHIP_PATH_INFO = {
 static int ship_position = ((168 - 20) / 2);
 
 static PropertyAnimation *property_animation;
+static PropertyAnimation *background_property_animation;
 
 
 static void animate_ship(void) {
@@ -62,9 +89,36 @@ static void explode_ship(void) {
 
 }
 
+static void animate_background(void) {
+  
+  // Set start and end
+  //GRect from_frame = layer_get_frame(background_layer);
+  /*
+  GRect from_frame = GRect(144 + (144 / 2), 0, 144 / 2, (168 - 20));
+  GRect to_frame = GRect(-144 / 2, 0, 144 / 2, (168 - 20));
+  */
+  GRect from_frame = GRect(0, 0, 144 * 3, (168 - 20));
+  GRect to_frame = GRect(144 * -2, 0, 144 * 3, (168 - 20));
+
+  // Create the animation
+  background_property_animation = property_animation_create_layer_frame(background_layer, &from_frame, &to_frame);
+  animation_set_duration((Animation*) background_property_animation, 10000);
+  animation_set_curve((Animation*) background_property_animation, AnimationCurveLinear);
+
+  animation_set_handlers((Animation*) background_property_animation, (AnimationHandlers) {
+    .stopped = (AnimationStoppedHandler) animate_background,
+  }, NULL);
+
+  // Schedule to occur ASAP with default settings
+  animation_schedule((Animation*) background_property_animation);
+
+}
+
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   text_layer_set_text(text_layer, "Select");
+
+  animate_background();
 }
 
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
@@ -127,6 +181,32 @@ static void background_update_proc(Layer *this_layer, GContext *ctx) {
   graphics_context_set_stroke_color(ctx, GColorWindsorTan);
   gpath_draw_outline(ctx, floor_path_ptr);
 
+  // draw stars
+  graphics_context_set_fill_color(ctx, GColorIcterine);
+  gpath_draw_filled(ctx, star1_path_ptr);
+  graphics_context_set_stroke_color(ctx, GColorPastelYellow);
+  gpath_draw_outline(ctx, star1_path_ptr);
+
+  graphics_context_set_fill_color(ctx, GColorIcterine);
+  gpath_draw_filled(ctx, star2_path_ptr);
+  graphics_context_set_stroke_color(ctx, GColorPastelYellow);
+  gpath_draw_outline(ctx, star2_path_ptr);
+
+  graphics_context_set_fill_color(ctx, GColorRajah);
+  gpath_draw_filled(ctx, star3_path_ptr);
+  graphics_context_set_stroke_color(ctx, GColorChromeYellow);
+  gpath_draw_outline(ctx, star3_path_ptr);
+
+  graphics_context_set_fill_color(ctx, GColorIcterine);
+  gpath_draw_filled(ctx, star4_path_ptr);
+  graphics_context_set_stroke_color(ctx, GColorPastelYellow);
+  gpath_draw_outline(ctx, star4_path_ptr);
+
+  graphics_context_set_fill_color(ctx, GColorIcterine);
+  gpath_draw_filled(ctx, star5_path_ptr);
+  graphics_context_set_stroke_color(ctx, GColorPastelYellow);
+  gpath_draw_outline(ctx, star5_path_ptr);
+
 }
 
 
@@ -145,8 +225,8 @@ static void window_load(Window *window) {
 
 
 
-  // Create background canvas layer
-  background_layer = layer_create(GRect(0, 0, bounds.size.w, bounds.size.h));
+  // Create background canvas layer - note triple-width!
+  background_layer = layer_create(GRect(0, 0, bounds.size.w * 3, bounds.size.h));
   layer_add_child(window_layer, background_layer);
 
   // Set the update_proc
@@ -165,6 +245,11 @@ static void window_load(Window *window) {
   ship_path_ptr = gpath_create(&SHIP_PATH_INFO);
   ceiling_path_ptr = gpath_create(&CEILING_PATH_INFO);
   floor_path_ptr = gpath_create(&FLOOR_PATH_INFO);
+  star1_path_ptr = gpath_create(&STAR1_PATH_INFO);
+  star2_path_ptr = gpath_create(&STAR2_PATH_INFO);
+  star3_path_ptr = gpath_create(&STAR3_PATH_INFO);
+  star4_path_ptr = gpath_create(&STAR4_PATH_INFO);
+  star5_path_ptr = gpath_create(&STAR5_PATH_INFO);
 }
 
 static void window_unload(Window *window) {

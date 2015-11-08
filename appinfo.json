@@ -1,11 +1,11 @@
 {
   "uuid": "721030b5-c875-49d8-a693-a60e68f08c9a",
   "shortName": "Igneous",
-  "longName": "Igneous",
-  "companyName": "MakeAwesomeHappen",
-  "versionLabel": "1.0",
+  "longName": "Igneous - a side-scrolling shooter for Pebble Time",
+  "companyName": "ishotjr.com",
+  "versionLabel": "0.1",
   "sdkVersion": "3",
-  "targetPlatforms": ["aplite", "basalt"],
+  "targetPlatforms": ["basalt"],
   "watchapp": {
     "watchface": false
   },

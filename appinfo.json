@@ -1,0 +1,18 @@
+{
+  "uuid": "721030b5-c875-49d8-a693-a60e68f08c9a",
+  "shortName": "Igneous",
+  "longName": "Igneous",
+  "companyName": "MakeAwesomeHappen",
+  "versionLabel": "1.0",
+  "sdkVersion": "3",
+  "targetPlatforms": ["aplite", "basalt"],
+  "watchapp": {
+    "watchface": false
+  },
+  "appKeys": {
+    "dummy": 0
+  },
+  "resources": {
+    "media": []
+  }
+}
